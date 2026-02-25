@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const { HttpError } = require("../utils/httpError");
 const { isStrongPassword, isValidEmail, normalizeEmail } = require("../utils/validators");
 const { readDb, writeDb } = require("../repositories/db");
+const { env } = require("../config/env");
 const {
   signAccessToken,
   signRefreshToken,
@@ -166,6 +167,69 @@ async function requestPasswordReset(email) {
   };
 }
 
+async function verifyGoogleIdToken(idToken) {
+  if (!env.googleClientId) {
+    throw new HttpError(500, "GOOGLE_CLIENT_ID nao configurado.");
+  }
+
+  if (!idToken) {
+    throw new HttpError(400, "Token Google obrigatorio.");
+  }
+
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
+  );
+
+  if (!response.ok) {
+    throw new HttpError(401, "Token Google invalido.");
+  }
+
+  const payload = await response.json();
+
+  if (payload.aud !== env.googleClientId) {
+    throw new HttpError(401, "Token Google invalido.");
+  }
+
+  return payload;
+}
+
+async function loginWithGoogle(idToken) {
+  const payload = await verifyGoogleIdToken(idToken);
+  const cleanEmail = normalizeEmail(payload.email);
+
+  if (!cleanEmail || !isValidEmail(cleanEmail)) {
+    throw new HttpError(400, "Email Google invalido.");
+  }
+
+  const db = await readDb();
+  let user = db.users.find((item) => item.email === cleanEmail);
+
+  if (!user) {
+    const now = new Date().toISOString();
+    user = {
+      id: uuidv4(),
+      email: cleanEmail,
+      name: payload.name || cleanEmail.split("@")[0],
+      passwordHash: null,
+      googleSub: payload.sub || null,
+      provider: "google",
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.users.push(user);
+    await writeDb(db);
+  } else {
+    if (!user.googleSub && payload.sub) {
+      user.googleSub = payload.sub;
+      user.provider = user.provider || "google";
+      user.updatedAt = new Date().toISOString();
+      await writeDb(db);
+    }
+  }
+
+  return buildSession(user);
+}
+
 module.exports = {
   register,
   login,
@@ -173,4 +237,5 @@ module.exports = {
   logout,
   getUserById,
   requestPasswordReset,
+  loginWithGoogle,
 };

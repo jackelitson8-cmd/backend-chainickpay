@@ -12,6 +12,7 @@ const env = {
   corsOrigin: process.env.CORS_ORIGIN || "*",
   chatTtlHours: Number(process.env.CHAT_TTL_HOURS || 24),
   chatMaxMessages: Number(process.env.CHAT_MAX_MESSAGES || 200),
+  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
 };
 
 module.exports = { env };

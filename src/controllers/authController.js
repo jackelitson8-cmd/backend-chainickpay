@@ -5,6 +5,7 @@ const {
   register,
   requestPasswordReset,
   getUserById,
+  loginWithGoogle,
 } = require("../services/authService");
 
 async function registerController(req, res, next) {
@@ -62,6 +63,16 @@ async function meController(req, res, next) {
   }
 }
 
+async function googleLoginController(req, res, next) {
+  try {
+    const idToken = req.body?.idToken;
+    const session = await loginWithGoogle(idToken);
+    res.status(200).json(session);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   registerController,
   loginController,
@@ -69,4 +80,5 @@ module.exports = {
   refreshController,
   logoutController,
   meController,
+  googleLoginController,
 };
