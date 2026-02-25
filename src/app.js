@@ -5,6 +5,7 @@ const morgan = require("morgan");
 
 const { env } = require("./config/env");
 const { authRoutes } = require("./routes/authRoutes");
+const { chatRoutes } = require("./routes/chatRoutes");
 const { HttpError } = require("./utils/httpError");
 
 const app = express();
@@ -24,6 +25,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/chat", chatRoutes);
 
 app.use((_req, _res, next) => {
   next(new HttpError(404, "Rota nao encontrada."));

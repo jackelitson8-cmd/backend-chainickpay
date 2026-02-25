@@ -10,6 +10,8 @@ const env = {
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   corsOrigin: process.env.CORS_ORIGIN || "*",
+  chatTtlHours: Number(process.env.CHAT_TTL_HOURS || 24),
+  chatMaxMessages: Number(process.env.CHAT_MAX_MESSAGES || 200),
 };
 
 module.exports = { env };
